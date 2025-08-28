@@ -1,0 +1,60 @@
+# Drum Trainer CLI (Local MVP)
+
+ドラム練習用の伴奏音源をローカルで生�Eする CLI です。指定した楽曲を�Eーカル/ドラム/ベ�Eス/そ�E他に刁E��し、ドラムをミュート（また�E減衰�E�した伴奏とクリチE��を重ねた音源を作れます、EPM と拍位置も解析し `metadata.json` に保存します、E
+## 特長
+- Demucs による高品質スチE��刁E���E�ローカル実行！E- BPM/ビ�Eト解析！Eibrosa�E�E- クリチE��生�EとオーチE��オ合�E�E�Eydub�E�E- すべてローカル完結�E CLI
+
+## 動作環墁E- macOS (Apple Silicon/M2 含む) また�E Linux
+- Python 3.10+
+- FFmpeg�E�エンコーチEチE��ードに使用�E�E  - macOS: `brew install ffmpeg`
+  - Linux: `sudo apt-get install ffmpeg` 筁E- 初回のみ Demucs のモチE��がダウンロードされます（オンライン�E�E
+> 法的注愁E 入力音源�E忁E��ユーザーが合法的に所持�E処琁E��能な篁E��で使用してください。�E動ダウンロード等�E機�Eは含みません、E
+## セチE��アチE�E
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Demucs 実行に PyTorch が忁E��です。環墁E��よっては手動でのインスト�Eルが忁E��な場合があります。インスト�Eルに失敗する場合�E公式ドキュメントをご確認ください、E
+## チE��レクトリ構�E
+```
+project/
+  app.py                # CLI 本佁E  requirements.txt
+  README.md
+  .env.example          # 拡張用のダミ�E設宁E  outputs/              # 実行時に生�E�E��E動！E```
+
+## 使ぁE��
+以下�E3コマンドを提供します、E
+### 1) スチE��刁E��
+```bash
+python app.py separate /path/to/song.wav \
+  --model htdemucs \
+  --out-dir ./outputs/<auto>
+```
+- 入力�E `.wav/.mp3/.m4a` など。�E部で `mix.wav`�E�E4.1kHz/16bit/スチE��オ�E�に正規化されます、E- Demucs を実行し `vocals.wav, drums.wav, bass.wav, other.wav` を�E力します、E- 出力�Eの既定�E `./outputs/<曲吁E` です、E
+### 2) 解析！EPM/ビ�Eト！E```bash
+python app.py analyze ./outputs/<song-name>/mix.wav
+```
+- `metadata.json` に `{"bpm": float, "beats": [seconds...]}` を保存します、E- 結果はチE�Eブルでも表示します、E
+### 3) 伴奏生成（ドラムミュート＋クリチE���E�E```bash
+python app.py make-backing ./outputs/<song-name>/ \
+  --auto-bpm \
+  --with-click \
+  --drum-gain -120   # 完�Eミュート、E24 等で減衰に変更可能 \
+  --mp3              # 任愁E MP3 も�E劁E```
+- `vocals+bass+other(+drums[gain])` を合成し `backing.wav` を生成します、E- `--auto-bpm` 持E��時は `metadata.json` のビ�Eト、なければオンザフライで推定します、E- `--bpm` を指定すると固定テンポ�EクリチE��を生成できます！E--auto-bpm` なし�E場合）、E
+## 受け入れ基準（目安！E- 1曲を通してクラチE��ュせず完走
+- `backing.wav` が�E瞭にドラム無/減衰で再生できる
+- `metadata.json` に `bpm` と `beats`�E�秒）が保存される
+- README から初見で 5 刁E��冁E��実行できる
+
+## トラブルシューチE��ング
+- Demucs 失敁E PyTorch のインスト�EルめE��チE��DLに失敗してぁE��可能性。`pip show demucs` と PyTorch の導�Eを確認、E- FFmpeg 未導�E: 変換めEMP3 出力に失敗します。`ffmpeg -version` で確認し、インスト�Eルしてください、E- オーチE��オ歪み: 入力クリチE�Eが大きい場合があります。`--drum-gain` を調整、生成後に正規化�E�本CLIは -1dBFS 付近に調整�E�、E- 出力が見つからなぁE `./outputs/<song>/` 以下に `mix.wav` と 4 stems が揃ってぁE��か確認、E
+## 今後�E拡張
+- AB ループ、段階テンポ、E/-3% 反復練翁E- GUI�E�EySide6�E�での再生・ループ�Eゲイン調整
+- Rubber Band による高品質ストレチE��/移調
+- ワーカー化！Eelery/Redis�E�でのバッチ�E琁E
+---
+こ�Eリポジトリはローカル実行を前提としてぁE��す。バグ報告や改喁E��案�E歓迎です、E
